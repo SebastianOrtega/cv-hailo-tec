@@ -4,6 +4,8 @@ from gi.repository import Gst, GLib
 import os
 import setproctitle
 import cv2
+from datetime import datetime
+
 
 import hailo
 from hailo_rpi_common import (
@@ -60,7 +62,7 @@ def app_callback(pad, info, user_data):
         y1 = int(y1_norm * alto)
         x2 = int(x2_norm * ancho)
         y2 = int(y2_norm * alto)
-        deteccion_auto = (x1, y1, x2 - x1, y2 - y1)
+        deteccion_auto = (x1, y1, x2, y2)
         #x1, y1, x2, y2 = int(bbox.xmin()), int(bbox.ymin()), int(bbox.xmax()), int(bbox.ymax())
         
         confianza = deteccion.get_confidence()
@@ -68,7 +70,7 @@ def app_callback(pad, info, user_data):
             # Verificar si la etiqueta es nueva
             if etiqueta not in user_data.detected_classes:
                 user_data.detected_classes.add(etiqueta)
-                print(f"Nueva clase detectada: {etiqueta},  caja: {deteccion_auto},  confianza: {confianza*100:.2f}%")
+                print(f"Clase: {etiqueta},  caja: {deteccion_auto},  confianza: {confianza*100:.2f}%  Hora: {datetime.now().strftime('%H:%M:%S')}  ")
 
             if user_data.use_frame:
                 cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
