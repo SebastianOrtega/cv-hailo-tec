@@ -6,6 +6,7 @@ import setproctitle
 import cv2
 from datetime import datetime
 import numpy as np
+import time
 
 import hailo
 from hailo_rpi_common import (
@@ -64,13 +65,16 @@ class user_app_callback_class(app_callback_class):
         self.detected_classes = set()
         self.tracked_objects = {}  # Diccionario de objetos rastreados
         self.next_object_id = 1    # Para asignar IDs únicos
-        self.distance_threshold = 50  # Umbral de distancia en píxeles
-        self.frames_since_seen_threshold = 100  # Umbral para considerar un objeto como perdido
+        self.distance_threshold = 80  # Umbral de distancia en píxeles
+        self.frames_since_seen_threshold = 200 # Umbral para considerar un objeto como perdido
         self.lost_objects = {}  # Diccionario de objetos perdidos
-        self.lost_objects_max_age = 150  # Máximo de frames para mantener objetos perdidos
+        self.lost_objects_max_age = 300  # Máximo de frames para mantener objetos perdidos
         self.first_frame_saved = False  # Bandera para controlar si el primer frame ha sido guardado
         self.count_entradas = 0  # Contador de entradas
         self.count_salidas = 0   # Contador de salidas
+        self.frame_count = 0
+        self.start_time = time.time()
+        self.fps = 0
 
     def new_function(self):
         return "El significado de la vida es: "
@@ -87,8 +91,31 @@ def app_callback(pad, info, user_data):
         return Gst.PadProbeReturn.OK
 
     user_data.increment()
+    user_data.frame_count += 1  # Incrementar contador de frames
+
+    # Calcular el tiempo transcurrido
+    current_time = time.time()
+    elapsed_time = current_time - user_data.start_time
+
+    if elapsed_time >= 1.0:
+        # Calcular FPS
+        user_data.fps = user_data.frame_count / elapsed_time
+        # Reiniciar contador y tiempo
+        user_data.frame_count = 0
+        user_data.start_time = current_time
 
     formato, ancho, alto = get_caps_from_pad(pad)
+
+    # Definir el área de interés (ROI) utilizando los puntos (230,170) y (470,520)
+    x_min_roi = 130  # Coordenada x mínima
+    y_min_roi = 130  # Coordenada y mínima
+    x_max_roi = 470  # Coordenada x máxima
+    y_max_roi = 570  # Coordenada y máxima
+    """x_min_roi = 0  # Coordenada x mínima
+    y_min_roi = 0  # Coordenada y mínima
+    x_max_roi = 640  # Coordenada x máxima
+    y_max_roi = 640  # Coordenada y máxima"""
+
 
     frame = None
     if user_data.use_frame and formato is not None and ancho is not None and alto is not None:
@@ -122,151 +149,156 @@ def app_callback(pad, info, user_data):
         y2 = int(y2_norm * alto)
 
         confianza = deteccion.get_confidence()
-        if confianza > 0.7:
+        if confianza > 0.4:
             if etiqueta in etiquetas_interes:
                 etiqueta_original = 'car'  # Guardar la etiqueta original
                 etiqueta = 'car'  # Convertir a 'car'
                 # Calcular el centro del bounding box
                 centro_actual = ((x1 + x2) // 2, (y1 + y2) // 2)
-                detecciones_actuales.append((etiqueta, etiqueta_original, centro_actual, (x1, y1, x2, y2), confianza))
+                if (x_min_roi <= centro_actual[0] <= x_max_roi) and (y_min_roi <= centro_actual[1] <= y_max_roi):
+                    detecciones_actuales.append((etiqueta, etiqueta_original, centro_actual, (x1, y1, x2, y2), confianza))
             else:
                 # Ignorar otras etiquetas o procesarlas de otra manera
                 pass
 
-    if not detecciones_actuales:
-        # No hay detecciones de interés en este frame
-        return Gst.PadProbeReturn.OK
+    if detecciones_actuales:
+        # Lista para IDs de objetos actualizados en esta iteración
+        ids_actualizados = set()
+        ids_para_eliminar = []  # Lista de IDs para eliminar
 
-    # Lista para IDs de objetos actualizados en esta iteración
-    ids_actualizados = set()
-    ids_para_eliminar = []  # Lista de IDs para eliminar
+        # Procesar las detecciones actuales
+        for etiqueta, etiqueta_original, centro_actual, bbox_coords, confianza in detecciones_actuales:
+            objeto_emparejado = None
+            distancia_minima = float('inf')
+            is_lost_object = False  # Indica si el objeto emparejado es de lost_objects
 
-    # Procesar las detecciones actuales
-    for etiqueta, etiqueta_original, centro_actual, bbox_coords, confianza in detecciones_actuales:
-        objeto_emparejado = None
-        distancia_minima = float('inf')
-        is_lost_object = False  # Indica si el objeto emparejado es de lost_objects
-
-        # Emparejar con objetos rastreados
-        for obj_id, objeto_rastreado in user_data.tracked_objects.items():
-            if etiqueta == objeto_rastreado.label and objeto_rastreado.status == 'sin_cambios':
-                # Calcular distancia euclidiana entre centros
-                dist = ((centro_actual[0] - objeto_rastreado.current_center[0])**2 +
-                        (centro_actual[1] - objeto_rastreado.current_center[1])**2) ** 0.5
-                if dist < user_data.distance_threshold and dist < distancia_minima:
-                    distancia_minima = dist
-                    objeto_emparejado = objeto_rastreado
-
-        # Si no se encontró en objetos rastreados, buscar en objetos perdidos
-        if objeto_emparejado is None:
-            for obj_id, lost_object in user_data.lost_objects.items():
-                if etiqueta == lost_object.label and lost_object.status == 'sin_cambios':
-                    dist = ((centro_actual[0] - lost_object.current_center[0])**2 +
-                            (centro_actual[1] - lost_object.current_center[1])**2) ** 0.5
+            # Emparejar con objetos rastreados
+            for obj_id, objeto_rastreado in user_data.tracked_objects.items():
+                if etiqueta == objeto_rastreado.label and objeto_rastreado.status == 'sin_cambios':
+                    # Calcular distancia euclidiana entre centros
+                    dist = ((centro_actual[0] - objeto_rastreado.current_center[0])**2 +
+                            (centro_actual[1] - objeto_rastreado.current_center[1])**2) ** 0.5
                     if dist < user_data.distance_threshold and dist < distancia_minima:
                         distancia_minima = dist
-                        objeto_emparejado = lost_object
-                        is_lost_object = True
-                        matched_lost_object_id = obj_id
+                        objeto_emparejado = objeto_rastreado
 
-        if objeto_emparejado:
-            if is_lost_object:
-                # Remover de lost_objects y agregar de nuevo a tracked_objects
-                user_data.lost_objects.pop(matched_lost_object_id)
-                user_data.tracked_objects[matched_lost_object_id] = objeto_emparejado
-                print(f"Objeto ID {matched_lost_object_id} recuperado.")
-            # Actualizar objeto rastreado existente
-            objeto_emparejado.update(centro_actual)
-            ids_actualizados.add(objeto_emparejado.object_id)
+            # Si no se encontró en objetos rastreados, buscar en objetos perdidos
+            if objeto_emparejado is None:
+                for obj_id, lost_object in user_data.lost_objects.items():
+                    if etiqueta == lost_object.label and lost_object.status == 'sin_cambios':
+                        dist = ((centro_actual[0] - lost_object.current_center[0])**2 +
+                                (centro_actual[1] - lost_object.current_center[1])**2) ** 0.5
+                        if dist < user_data.distance_threshold and dist < distancia_minima:
+                            distancia_minima = dist
+                            objeto_emparejado = lost_object
+                            is_lost_object = True
+                            matched_lost_object_id = obj_id
 
-            # Solo verificar si el estado es 'sin_cambios'
-            if objeto_emparejado.status == 'sin_cambios':
-                # Calcular distancia y pendiente
-                distancia_total = objeto_emparejado.get_distance()
-                pendiente = objeto_emparejado.get_slope()
+            if objeto_emparejado:
+                if is_lost_object:
+                    # Remover de lost_objects y agregar de nuevo a tracked_objects
+                    user_data.lost_objects.pop(matched_lost_object_id)
+                    user_data.tracked_objects[matched_lost_object_id] = objeto_emparejado
+                    print(f"Objeto ID {matched_lost_object_id} recuperado.")
+                # Actualizar objeto rastreado existente
+                objeto_emparejado.update(centro_actual)
+                ids_actualizados.add(objeto_emparejado.object_id)
 
-                if distancia_total > 120:
-                    if pendiente < 0 and objeto_emparejado.status == 'sin_cambios':
-                        objeto_emparejado.status = 'entrada'
-                        print(f"Objeto ID {objeto_emparejado.object_id} distancia: {distancia_total}  pendiente: {pendiente}")
-                        user_data.count_entradas += 1  # Incrementar contador de entradas
-                        #ids_para_eliminar.append(objeto_emparejado.object_id)
-                        print(f"Objeto ID {objeto_emparejado.object_id} cambió a 'entrada'")
-                    elif pendiente > 0 and objeto_emparejado.status == 'sin_cambios':
-                        objeto_emparejado.status = 'salida'
-                        print(f"Objeto ID {objeto_emparejado.object_id} distancia: {distancia_total}  pendiente: {pendiente}")
-                        user_data.count_salidas += 1  # Incrementar contador de salidas
-                        #ids_para_eliminar.append(objeto_emparejado.object_id)
-                        print(f"Objeto ID {objeto_emparejado.object_id} cambió a 'salida'")
+                # Solo verificar si el estado es 'sin_cambios'
+                if objeto_emparejado.status == 'sin_cambios':
+                    # Calcular distancia y pendiente
+                    distancia_total = objeto_emparejado.get_distance()
+                    pendiente = objeto_emparejado.get_slope()
 
-            # Dibujar en el frame
-            if user_data.use_frame:
-                x1, y1, x2, y2 = bbox_coords
-                cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-                cv2.putText(frame, f"ID: {objeto_emparejado.object_id} {etiqueta_original} {confianza:.2f} dist:{distancia_total:.2f}",
-                            (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
-        else:
-            # Crear nuevo objeto rastreado
-            object_id = user_data.next_object_id
-            user_data.next_object_id += 1
+                    if distancia_total > 120:
+                        if pendiente < 0 and objeto_emparejado.status == 'sin_cambios':
+                            objeto_emparejado.status = 'entrada'
+                            print(f"Objeto ID {objeto_emparejado.object_id} distancia: {distancia_total}  pendiente: {pendiente}")
+                            user_data.count_entradas += 1  # Incrementar contador de entradas
+                            #ids_para_eliminar.append(objeto_emparejado.object_id)
+                            print(f"Objeto ID {objeto_emparejado.object_id} cambió a 'entrada'")
+                        elif pendiente > 0 and objeto_emparejado.status == 'sin_cambios':
+                            objeto_emparejado.status = 'salida'
+                            print(f"Objeto ID {objeto_emparejado.object_id} distancia: {distancia_total}  pendiente: {pendiente}")
+                            user_data.count_salidas += 1  # Incrementar contador de salidas
+                            #ids_para_eliminar.append(objeto_emparejado.object_id)
+                            print(f"Objeto ID {objeto_emparejado.object_id} cambió a 'salida'")
 
-            nuevo_objeto = TrackedObject(object_id, etiqueta, centro_actual)
-            user_data.tracked_objects[object_id] = nuevo_objeto
-            ids_actualizados.add(object_id)
+                # Dibujar en el frame
+                if user_data.use_frame:
+                    x1, y1, x2, y2 = bbox_coords
+                    cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                    cv2.putText(frame, f"ID: {objeto_emparejado.object_id} {etiqueta_original} {confianza:.2f} dist:{distancia_total:.2f}",
+                                (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
+            else:
+                # Crear nuevo objeto rastreado
+                object_id = user_data.next_object_id
+                user_data.next_object_id += 1
 
-            print(f"Nuevo objeto detectado: ID {object_id}, Clase: {etiqueta_original}")
+                nuevo_objeto = TrackedObject(object_id, etiqueta, centro_actual)
+                user_data.tracked_objects[object_id] = nuevo_objeto
+                ids_actualizados.add(object_id)
 
-            # Dibujar en el frame
-            if user_data.use_frame:
-                x1, y1, x2, y2 = bbox_coords
-                cv2.rectangle(frame, (x1, y1), (x2, y2), (255, 0, 0), 2)
-                cv2.putText(frame, f"ID: {object_id} {etiqueta_original} {confianza:.2f}",
-                            (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+                print(f"Nuevo objeto detectado: ID {object_id}, Clase: {etiqueta_original}")
 
-    # Incrementar contador de frames sin ver para objetos no actualizados
-    ids_para_eliminar_frames = []
-    for obj_id, objeto_rastreado in user_data.tracked_objects.items():
-        if obj_id not in ids_actualizados:
-            objeto_rastreado.increment_frames_since_seen()
-            if objeto_rastreado.frames_since_seen > user_data.frames_since_seen_threshold:
-                ids_para_eliminar_frames.append(obj_id)
+                # Dibujar en el frame
+                if user_data.use_frame:
+                    x1, y1, x2, y2 = bbox_coords
+                    cv2.rectangle(frame, (x1, y1), (x2, y2), (255, 0, 0), 2)
+                    cv2.putText(frame, f"ID: {object_id} {etiqueta_original} {confianza:.2f}",
+                                (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
-    # Mover objetos perdidos a lost_objects
-    for obj_id in ids_para_eliminar_frames:
-        lost_object = user_data.tracked_objects.pop(obj_id)
-        lost_object.lost_frames = 0  # Inicializar contador
-        user_data.lost_objects[obj_id] = lost_object
-        print(f"Objeto ID {obj_id} perdido temporalmente.")
+        # Incrementar contador de frames sin ver para objetos no actualizados
+        ids_para_eliminar_frames = []
+        for obj_id, objeto_rastreado in user_data.tracked_objects.items():
+            if obj_id not in ids_actualizados:
+                objeto_rastreado.increment_frames_since_seen()
+                if objeto_rastreado.frames_since_seen > user_data.frames_since_seen_threshold:
+                    ids_para_eliminar_frames.append(obj_id)
 
-    # Incrementar contador de lost_frames y eliminar objetos perdidos antiguos
-    ids_to_remove_from_lost = []
-    for obj_id, lost_object in user_data.lost_objects.items():
-        lost_object.lost_frames += 1
-        if lost_object.lost_frames > user_data.lost_objects_max_age:
-            ids_to_remove_from_lost.append(obj_id)
+        # Mover objetos perdidos a lost_objects
+        for obj_id in ids_para_eliminar_frames:
+            lost_object = user_data.tracked_objects.pop(obj_id)
+            lost_object.lost_frames = 0  # Inicializar contador
+            user_data.lost_objects[obj_id] = lost_object
+            print(f"Objeto ID {obj_id} perdido temporalmente.")
 
-    for obj_id in ids_to_remove_from_lost:
-        del user_data.lost_objects[obj_id]
-        print(f"Objeto ID {obj_id} eliminado permanentemente de objetos perdidos.")
+        # Incrementar contador de lost_frames y eliminar objetos perdidos antiguos
+        ids_to_remove_from_lost = []
+        for obj_id, lost_object in user_data.lost_objects.items():
+            lost_object.lost_frames += 1
+            if lost_object.lost_frames > user_data.lost_objects_max_age:
+                ids_to_remove_from_lost.append(obj_id)
 
-    # Eliminar objetos que cambiaron de estado
-    for obj_id in ids_para_eliminar:
-        if obj_id in user_data.tracked_objects:
-            del user_data.tracked_objects[obj_id]
-        if obj_id in user_data.lost_objects:
+        for obj_id in ids_to_remove_from_lost:
             del user_data.lost_objects[obj_id]
-        print(f"Objeto ID {obj_id} removido del seguimiento.")
+            print(f"Objeto ID {obj_id} eliminado permanentemente de objetos perdidos.")
+
+        # Eliminar objetos que cambiaron de estado
+        for obj_id in ids_para_eliminar:
+            if obj_id in user_data.tracked_objects:
+                del user_data.tracked_objects[obj_id]
+            if obj_id in user_data.lost_objects:
+                del user_data.lost_objects[obj_id]
+            print(f"Objeto ID {obj_id} removido del seguimiento.")
 
     if user_data.use_frame:
-        # Mostrar estadísticas personalizadas
+        cv2.rectangle(frame, (x_min_roi, y_min_roi), (x_max_roi, y_max_roi), (255, 255, 0), 2)  # Dibujar ROI
+        cv2.putText(frame, f"ROI", (x_max_roi, y_min_roi+(y_max_roi-y_min_roi)//2),
+                    cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 0), 2)
+        # Mostrar estadísticas de movimientos
         cv2.putText(frame, f"Entradas: {user_data.count_entradas}", (10, 30),
                     cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
         cv2.putText(frame, f"Salidas: {user_data.count_salidas}", (10, 70),
-                    cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+                        cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+        
+        # Mostrar FPS
+        cv2.putText(frame, f"FPS: {user_data.fps:.2f}", (10, 110),
+                cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 0), 2)
 
         frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
         user_data.set_frame(frame)
-
+    
     return Gst.PadProbeReturn.OK
 
 
