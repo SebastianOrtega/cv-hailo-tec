@@ -45,6 +45,7 @@ def app_callback(pad, info, user_data):
     frame = None
     if user_data.use_frame and formato is not None and ancho is not None and alto is not None:
         frame = get_numpy_from_buffer(buffer, formato, ancho, alto)
+        #print("shape", frame.shape)
 
     roi = hailo.get_roi_from_buffer(buffer)
     detecciones = roi.get_objects_typed(hailo.HAILO_DETECTION)
@@ -64,6 +65,17 @@ def app_callback(pad, info, user_data):
         y2 = int(y2_norm * alto)
         deteccion_auto = (x1, y1, x2, y2)
         #x1, y1, x2, y2 = int(bbox.xmin()), int(bbox.ymin()), int(bbox.xmax()), int(bbox.ymax())
+
+                # Definir el nuevo tamaño deseado
+        target_size = (640, 640)
+
+        # Calcular el tamaño del borde superior e inferior (centrado)
+        top_bottom_padding = (target_size[1] - frame.shape[0]) // 2  # Para bordes superior e inferior
+
+        # Aplicar relleno usando cv2.copyMakeBorder
+        # Bordes en formato (top, bottom, left, right)
+        frame = cv2.copyMakeBorder(frame, top_bottom_padding, top_bottom_padding, 0, 0, cv2.BORDER_CONSTANT, value=[0, 0, 0])
+
         
         confianza = deteccion.get_confidence()
         if confianza > 0.7:
@@ -76,19 +88,19 @@ def app_callback(pad, info, user_data):
                 cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
                 cv2.putText(frame, f"{etiqueta} {confianza:.2f}", (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
             conteo_detecciones += 1
-            #print("Detection",conteo_detecciones)
+            #print("shape",frame.shape)
 
     if user_data.use_frame:
         # Renderizado de estadísticas personalizadas
-        texto_fps = f"FPS: {user_data.get_fps()}"
-        texto_dropped = f"Frames perdidos: {user_data.get_dropped()}"
-        texto_rendered = f"Frames renderizados: {user_data.get_rendered()}"
+        #texto_fps = f"FPS: {user_data.get_fps()}"
+        #texto_dropped = f"Frames perdidos: {user_data.get_dropped()}"
+        #texto_rendered = f"Frames renderizados: {user_data.get_rendered()}"
 
         cv2.putText(frame, f"Detecciones: {conteo_detecciones}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
         cv2.putText(frame, f"{user_data.new_function()} {user_data.new_variable}", (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
-        cv2.putText(frame, texto_fps, (10, 90), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
-        cv2.putText(frame, texto_dropped, (10, 120), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
-        cv2.putText(frame, texto_rendered, (10, 150), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+        cv2.putText(frame, "texto_fps", (10, 90), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+        cv2.putText(frame, "texto_dropped", (10, 120), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+        cv2.putText(frame, "texto_rendered", (10, 150), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
 
         frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
         user_data.set_frame(frame) 
