@@ -30,6 +30,7 @@ class TrackedObject:
         self.history = [initial_center]  # Historial de posiciones
         self.frames_since_seen = 0  # Contador de frames sin ser visto
         self.lost_frames = 0  # Contador de frames desde que fue perdido
+        self.status = 'sin_cambios'  # Estado inicial
 
     def update(self, new_center):
         self.current_center = new_center
@@ -68,6 +69,8 @@ class user_app_callback_class(app_callback_class):
         self.lost_objects = {}  # Diccionario de objetos perdidos
         self.lost_objects_max_age = 150  # Máximo de frames para mantener objetos perdidos
         self.first_frame_saved = False  # Bandera para controlar si el primer frame ha sido guardado
+        self.count_entradas = 0  # Contador de entradas
+        self.count_salidas = 0   # Contador de salidas
 
     def new_function(self):
         return "El significado de la vida es: "
@@ -99,21 +102,6 @@ def app_callback(pad, info, user_data):
             user_data.first_frame_saved = True
             print("Primer frame guardado como 'primer_frame.png'")
 
-    """# Redimensionar el frame a 640x360
-        frame_resized = cv2.resize(frame, (640, 360))
-
-        # Crear una imagen negra de 640x640
-        frame_black = np.zeros((640, 640, 3), dtype=np.uint8)
-
-        # Calcular el desplazamiento vertical para centrar el frame
-        y_offset = (640 - 360) // 2  # (tamaño total - altura del frame redimensionado) / 2
-
-        # Colocar el frame redimensionado en el centro de la imagen negra
-        frame_black[y_offset:y_offset + 360, 0:640] = frame_resized
-
-        # Reemplazar 'frame' por la imagen negra con el frame centrado
-        frame = frame_black"""
-
     roi = hailo.get_roi_from_buffer(buffer)
     detecciones = roi.get_objects_typed(hailo.HAILO_DETECTION)
 
@@ -136,7 +124,7 @@ def app_callback(pad, info, user_data):
         confianza = deteccion.get_confidence()
         if confianza > 0.7:
             if etiqueta in etiquetas_interes:
-                etiqueta_original = etiqueta  # Guardar la etiqueta original
+                etiqueta_original = 'car'  # Guardar la etiqueta original
                 etiqueta = 'car'  # Convertir a 'car'
                 # Calcular el centro del bounding box
                 centro_actual = ((x1 + x2) // 2, (y1 + y2) // 2)
@@ -151,6 +139,7 @@ def app_callback(pad, info, user_data):
 
     # Lista para IDs de objetos actualizados en esta iteración
     ids_actualizados = set()
+    ids_para_eliminar = []  # Lista de IDs para eliminar
 
     # Procesar las detecciones actuales
     for etiqueta, etiqueta_original, centro_actual, bbox_coords, confianza in detecciones_actuales:
@@ -160,7 +149,7 @@ def app_callback(pad, info, user_data):
 
         # Emparejar con objetos rastreados
         for obj_id, objeto_rastreado in user_data.tracked_objects.items():
-            if etiqueta == objeto_rastreado.label:
+            if etiqueta == objeto_rastreado.label and objeto_rastreado.status == 'sin_cambios':
                 # Calcular distancia euclidiana entre centros
                 dist = ((centro_actual[0] - objeto_rastreado.current_center[0])**2 +
                         (centro_actual[1] - objeto_rastreado.current_center[1])**2) ** 0.5
@@ -171,7 +160,7 @@ def app_callback(pad, info, user_data):
         # Si no se encontró en objetos rastreados, buscar en objetos perdidos
         if objeto_emparejado is None:
             for obj_id, lost_object in user_data.lost_objects.items():
-                if etiqueta == lost_object.label:
+                if etiqueta == lost_object.label and lost_object.status == 'sin_cambios':
                     dist = ((centro_actual[0] - lost_object.current_center[0])**2 +
                             (centro_actual[1] - lost_object.current_center[1])**2) ** 0.5
                     if dist < user_data.distance_threshold and dist < distancia_minima:
@@ -190,21 +179,31 @@ def app_callback(pad, info, user_data):
             objeto_emparejado.update(centro_actual)
             ids_actualizados.add(objeto_emparejado.object_id)
 
-            # Calcular distancia y pendiente
-            distancia_total = objeto_emparejado.get_distance()
-            pendiente = objeto_emparejado.get_slope()
+            # Solo verificar si el estado es 'sin_cambios'
+            if objeto_emparejado.status == 'sin_cambios':
+                # Calcular distancia y pendiente
+                distancia_total = objeto_emparejado.get_distance()
+                pendiente = objeto_emparejado.get_slope()
 
-            print(f"ID: {objeto_emparejado.object_id}, Clase: {etiqueta_original}, "
-                f"Distancia: {distancia_total:.2f}, Pendiente: {pendiente:.2f}, "
-                f"Centro inicial: {objeto_emparejado.initial_center}, "
-                f"Centro actual: {objeto_emparejado.current_center}")
-
+                if distancia_total > 120:
+                    if pendiente < 0 and objeto_emparejado.status == 'sin_cambios':
+                        objeto_emparejado.status = 'entrada'
+                        print(f"Objeto ID {objeto_emparejado.object_id} distancia: {distancia_total}  pendiente: {pendiente}")
+                        user_data.count_entradas += 1  # Incrementar contador de entradas
+                        #ids_para_eliminar.append(objeto_emparejado.object_id)
+                        print(f"Objeto ID {objeto_emparejado.object_id} cambió a 'entrada'")
+                    elif pendiente > 0 and objeto_emparejado.status == 'sin_cambios':
+                        objeto_emparejado.status = 'salida'
+                        print(f"Objeto ID {objeto_emparejado.object_id} distancia: {distancia_total}  pendiente: {pendiente}")
+                        user_data.count_salidas += 1  # Incrementar contador de salidas
+                        #ids_para_eliminar.append(objeto_emparejado.object_id)
+                        print(f"Objeto ID {objeto_emparejado.object_id} cambió a 'salida'")
 
             # Dibujar en el frame
             if user_data.use_frame:
                 x1, y1, x2, y2 = bbox_coords
                 cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-                cv2.putText(frame, f"ID: {objeto_emparejado.object_id} {etiqueta_original} {confianza:.2f}",
+                cv2.putText(frame, f"ID: {objeto_emparejado.object_id} {etiqueta_original} {confianza:.2f} dist:{distancia_total:.2f}",
                             (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
         else:
             # Crear nuevo objeto rastreado
@@ -225,15 +224,15 @@ def app_callback(pad, info, user_data):
                             (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
     # Incrementar contador de frames sin ver para objetos no actualizados
-    ids_para_eliminar = []
+    ids_para_eliminar_frames = []
     for obj_id, objeto_rastreado in user_data.tracked_objects.items():
         if obj_id not in ids_actualizados:
             objeto_rastreado.increment_frames_since_seen()
             if objeto_rastreado.frames_since_seen > user_data.frames_since_seen_threshold:
-                ids_para_eliminar.append(obj_id)
+                ids_para_eliminar_frames.append(obj_id)
 
     # Mover objetos perdidos a lost_objects
-    for obj_id in ids_para_eliminar:
+    for obj_id in ids_para_eliminar_frames:
         lost_object = user_data.tracked_objects.pop(obj_id)
         lost_object.lost_frames = 0  # Inicializar contador
         user_data.lost_objects[obj_id] = lost_object
@@ -250,11 +249,20 @@ def app_callback(pad, info, user_data):
         del user_data.lost_objects[obj_id]
         print(f"Objeto ID {obj_id} eliminado permanentemente de objetos perdidos.")
 
+    # Eliminar objetos que cambiaron de estado
+    for obj_id in ids_para_eliminar:
+        if obj_id in user_data.tracked_objects:
+            del user_data.tracked_objects[obj_id]
+        if obj_id in user_data.lost_objects:
+            del user_data.lost_objects[obj_id]
+        print(f"Objeto ID {obj_id} removido del seguimiento.")
+
     if user_data.use_frame:
         # Mostrar estadísticas personalizadas
-        cv2.putText(frame, f"Detecciones: {len(detecciones_actuales)}", (10, 30),
+        cv2.putText(frame, f"Entradas: {user_data.count_entradas}", (10, 30),
+                    cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+        cv2.putText(frame, f"Salidas: {user_data.count_salidas}", (10, 70),
                     cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
-        # Puedes añadir más información si lo deseas
 
         frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
         user_data.set_frame(frame)
