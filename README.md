@@ -1,139 +1,101 @@
-
-![Banner](doc/images/hailo_rpi_examples_banner.png)
-
-# Hailo Raspberry Pi 5 Examples
-
-Welcome to the Hailo Raspberry Pi 5 Examples repository. This project showcases various examples demonstrating the capabilities of the Hailo AI processor on a Raspberry Pi 5. These examples will help you get started with AI on embedded devices.
-Visit the [Hailo Official Website](https://hailo.ai/) and [Hailo Community Forum](https://community.hailo.ai/) for more information.
-
-## Table of Contents
-
-- [Hailo Raspberry Pi 5 Examples](#hailo-raspberry-pi-5-examples)
-  - [Table of Contents](#table-of-contents)
-  - [Hailo Packages Installation](#hailo-packages-installation)
-    - [Hailo Version Upgrade Instructions](#hailo-version-upgrade-instructions)
-  - [Available Examples and Resources](#available-examples-and-resources)
-    - [Hailo Python API](#hailo-python-api)
-    - [Hailo Examples](#hailo-examples)
-      - [Basic Pipelines (Python)](#basic-pipelines-python)
-        - [Detection Example](#detection-example)
-        - [Pose Estimation Example](#pose-estimation-example)
-        - [Instance Segmentation Example](#instance-segmentation-example)
-      - [CLIP Application](#clip-application)
-      - [Frigate Integration - Coming Soon](#frigate-integration---coming-soon)
-    - [Raspberry Pi Official Examples](#raspberry-pi-official-examples)
-      - [rpicam-apps](#rpicam-apps)
-      - [picamera2](#picamera2)
-    - [Hailo Dataflow Compiler (DFC)](#hailo-dataflow-compiler-dfc)
-  - [Contributing](#contributing)
-  - [License](#license)
-  - [Disclaimer](#disclaimer)
-
-![Raspberry Pi 5 with Hailo M.2](doc/images/Raspberry_Pi_5_Hailo-8.png)
-
-## Hailo Packages Installation
-
-For installation instructions, see the [Hailo Raspberry Pi 5 installation guide](doc/install-raspberry-pi5.md#how-to-set-up-raspberry-pi-5-and-hailo-8l).
-
-### Hailo Version Upgrade Instructions
-
-See the [Upgrade or Downgrade Hailo Software](doc/install-raspberry-pi5.md#hailo-version-upgrade-instructions) section for instructions on how to upgrade the Hailo software.
-
-## Available Examples and Resources
-
-### Hailo Python API
-The Hailo Python API is now available on the Raspberry Pi 5. This API allows you to run inference on the Hailo-8L AI processor using Python.
-For examples, see our [Python code examples](https://github.com/hailo-ai/Hailo-Application-Code-Examples/tree/main/runtime/python).
-Additional examples can be found in RPi [picamera2](#picamera2) code.
-Visit our [HailoRT Python API documentation](https://hailo.ai/developer-zone/documentation/hailort-v4-18-0/?page=api%2Fpython_api.html#module-hailo_platform.drivers) for more information.
-
-### Hailo Examples
-
-#### [Basic Pipelines (Python)](doc/basic-pipelines.md#hailo-rpi5-basic-pipelines)
-
-These pipelines are included in this repository. They demonstrate object detection, human pose estimation, and instance segmentation in an easy-to-use format.
-For installation instructions, see the [Basic Pipelines Installation Guide](doc/basic-pipelines.md#installation).
+<div style="text-align: center;">
+  <img src="assets/logo_tec.png" alt="Logo TEC" />
+</div>
+</br>
 
 
-##### [Detection Example](doc/basic-pipelines.md#detection-example)
-![Detection Example](doc/images/detection.gif)
+# Proyecto Integrador Equipo 20 
 
-**Retrained Networks Support**
+Este repositorio contiene el desarrollo de nuestro proyecto sobre un fork del repositorio de ejemplos de Hailo, sigue la estructura del repositorio base de Hailo, y contiene nuestros entregables.
 
-This application includes support for using retrained detection models. For more information, see [Using Retrained Models](doc/basic-pipelines.md#using-retrained-models).
+## Integrantes
 
-##### [Pose Estimation Example](doc/basic-pipelines.md#pose-estimation-example)
-![Pose Estimation Example](doc/images/pose_estimation.gif)
+- A01794188 - Francisco Xavier Bastidas Moreno 
+- A01794653 - Raúl Jesús Coronado Aguirre 
+- A01794327 - Juan Sebastián Ortega Briones
 
-##### [Instance Segmentation Example](doc/basic-pipelines.md#instance-segmentation-example)
-![Instance Segmentation Example](doc/images/instance_segmentation.gif)
+##  Indice
 
-#### CLIP Application
+ 1. [Avance 0 ](./Avance0%23Equipo20.pdf)
+ 2. [Avance 1 ](./Avance1%23Equipo20.pdf)
+ 3. [Avance 2 ](./Avance2%23Equipo20.pdf)
+ 4. [Avance 3 ](./Avance3%23Equipo20.pdf)
 
-CLIP (Contrastive Language-Image Pretraining) predicts the most relevant text prompt on real-time video frames using the Hailo-8L AI processor.
-See the [hailo-CLIP Repository](https://github.com/hailo-ai/hailo-CLIP) for more information.
-Click the image below to watch the demo on YouTube.
+## [Código](basic_pipelines/desde_cero.py)
 
-[![Watch the demo on YouTube](https://img.youtube.com/vi/XXizBHtCLew/0.jpg)](https://youtu.be/XXizBHtCLew)
+## Evidencia en video
+[Avance 2 - Demostración de características ](https://moviltrack-my.sharepoint.com/:v:/p/sortega/EeXvsAuP1EdCpmZFKprT2W4BSHTL0buqXMhEXWPkI3lIXg?e=FWLSc2)
+
+[Avance 2 - Demostración de características RFID ](https://moviltrack-my.sharepoint.com/:v:/p/sortega/EfbZp_YvPrVJix2TYqhsI_ABCpYehQcC08gok_1Glbu7cg?e=sV9mKa)
 
 
-#### Frigate Integration - Coming Soon
 
-Frigate is an open-source video surveillance software that runs on a Raspberry Pi. This integration will allow you to use the Hailo-8L AI processor for object detection in real-time video streams.
+[Avance 3 - Baseline](https://moviltrack-my.sharepoint.com/:v:/p/sortega/EeXvsAuP1EdCpmZFKprT2W4BSHTL0buqXMhEXWPkI3lIXg?e=FWLSc2)
 
-### Raspberry Pi Official Examples
 
-#### rpicam-apps
 
-Raspberry Pi [rpicam-apps](https://www.raspberrypi.com/documentation/computers/camera_software.html#rpicam-apps) Hailo post-processing examples.
-This is Raspberry Pi's official example for AI post-processing using the Hailo AI processor integrated into their CPP camera framework.
-The documentation on how to use rpicam-apps can be found [here](https://www.raspberrypi.com/documentation/accessories/ai-kit.html).
-The run command is simplified, and the assets are pre-installed in the system.
-To run an example from rpicam-apps, run:
 
-```bash
-rpicam-hello -t 0 --post-process-file /usr/share/rpi-camera-assets/hailo_yolov6_inference.json
+## Utilidades para el desarrollo del proyecto
+
+Para generar las regiones de interés en las imágenes, se utilizó la herramienta MAkeSens.ai, la cual permite generar las regiones de interés de manera sencilla y exportarlas en formato JSON.
+https://www.makesense.ai/
+
+Para Pruebas, hicimos edición de video para recortar los tiempos donde no hay nada y no tener que esperar tanto tiempo para probar el código. Para esto utilizamos la herramienta OpenShot, que es un editor de video de código abierto y multiplataforma.
+https://www.openshot.org/es/
+
+
+
+# Ejecución del código
+````
+python basic_pipelines/desde_cero.py --video-file /media/pi/KINGSTON/recordings/Ultima_posicion/recording_20240928_133154.mp4 --use-frame
+````
+
+La opción **--use-frame** permite visualizar el video en tiempo real, si no se coloca esta opción, Sin presentar el video con todas las características que estamos calculando, Sin embargo, si se Presenta el video con todas las detecciones y las estadísticas. 
+
+### Notas
+El video Que estamos utilizando los seleccionamos, porque tiene muchas características que nos permiten probar el código como vehículos estáticos distracciones, más de un vehículo en la imagen vehículos, que circulan lento y vehículos que circulan muy rápido. 
+Dentro de nuestro repositorio de datos, este es este es el archivo del video que estamos ocupando:
+recording_20240928_133154.mp4
+
+En la Raspberry lo tenemos conectado a una memoria externa, por lo que la ruta de acceso es 
+```/media/pi/KINGSTON/recordings/Ultima_posicion/recording_20240928_133154.mp4```
+
+Como referencia para pruebas externas a la Raspberry Se puede descargar de esta ruta: 
+
+https://moviltrack-my.sharepoint.com/:v:/p/sortega/EQkRa5qF7D1OvWKATfq312cBnhCv5WW2wY5GorRyY4Yqrg?e=gs6UoY
+
+### Diagrama de flujo
+
+```mermaid
+flowchart TD
+A[Flujo de video de entrada] --> B[Pipeline de GStreamer]
+B --> C[Detección de vehículos con YOLOv6n]
+C --> D{¿Objeto detectado?}
+D -- Sí --> E[Rastrear objeto en la clase TrackedObject]
+D -- No --> F[Continuar flujo de video]
+
+E --> G{¿Objeto ya rastreado?}
+G -- Sí --> H[Actualizar posición del objeto]
+H --> I[Calcular distancia y pendiente]
+I --> J{¿Distancia > Umbral?}
+J -- Sí --> K[Clasificar como Entrada o Salida]
+J -- No --> L[Continuar rastreo]
+
+G -- No --> M[Crear nuevo objeto rastreado]
+M --> L[Continuar rastreo]
+
+H --> N[Incrementar contador de cuadros no vistos]
+N --> O{¿Cuadros > Umbral de objetos perdidos?}
+O -- Sí --> P[Mover objeto a lostObjects]
+O -- No --> Q[Continuar rastreo]
+
+P --> R{¿Objeto perdido por mucho tiempo?}
+R -- Sí --> S[Eliminar objeto perdido]
+R -- No --> Q[Continuar rastreo]
+    
+K --> F[Continuar flujo de video]
+L --> F
+Q --> F
 ```
 
-See more available examples in the `/usr/share/rpi-camera-assets` directory.
 
-#### picamera2
-
-Raspberry Pi [picamera2](https://github.com/raspberrypi/picamera2) is the libcamera-based replacement for Picamera, which was a Python interface to the Raspberry Pi's legacy camera stack. Picamera2 also presents an easy-to-use Python API.
-Run the following command to clone the picamera2 repo and get the example files:
-
-```bash
-git clone --depth 1 https://github.com/raspberrypi/picamera2
-```
-
-The examples will be in `./picamera2/examples/hailo/`.
-To run an example from picamera2, run:
-
-```bash
-cd picamera2/examples/hailo/
-python3 pose.py
-```
-### Hailo Dataflow Compiler (DFC)
-
-The Hailo Dataflow Compiler (DFC) is a software tool that enables developers to compile their neural networks to run on the Hailo-8/8L AI processors.
-The DFC is available for download from the [Hailo Developer Zone](https://hailo.ai/developer-zone/software-downloads/) (Registration required).
-For examples, tutorials, and retrain instructions, see the [Hailo Model Zoo Repo](https://github.com/hailo-ai/hailo_model_zoo).
-Additional documentation and [tutorials](https://hailo.ai/developer-zone/documentation/dataflow-compiler/latest/?sp_referrer=tutorials/tutorials.html) can be found in the [Hailo Developer Zone Documentation](https://hailo.ai/developer-zone/documentation/).
-For a full end-to-end training and deployment example, see the [Retraining Example](doc/retraining-example.md).
-The detection basic pipeline example includes support for retrained models. For more information, see [Using Retrained Models](doc/basic-pipelines.md#using-retrained-models).
-
-## Contributing
-
-We welcome contributions from the community. You can contribute by:
-1. Opening a pull request.
-2. Reporting issues and bugs.
-3. Suggesting new features or improvements.
-4. Joining the discussion on the [Hailo Community Forum](https://community.hailo.ai/).
-
-## License
-
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
-
-## Disclaimer
-
-This code example is provided by Hailo solely on an “AS IS” basis and “with all faults.” No responsibility or liability is accepted or shall be imposed upon Hailo regarding the accuracy, merchantability, completeness, or suitability of the code example. Hailo shall not have any liability or responsibility for errors or omissions in, or any business decisions made by you in reliance on this code example or any part of it. If an error occurs when running this example, please open a ticket in the "Issues" tab.
