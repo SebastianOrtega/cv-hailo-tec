@@ -61,6 +61,7 @@ class TrackedObject:
 class user_app_callback_class(app_callback_class):
     def __init__(self):
         super().__init__()
+        self.new_variable = 42
         self.detected_classes = set()
         self.tracked_objects = {}  # Diccionario de objetos rastreados
         self.next_object_id = 1    # Para asignar IDs únicos
@@ -75,8 +76,8 @@ class user_app_callback_class(app_callback_class):
         self.start_time = time.time()
         self.fps = 0
 
-    """ def new_function(self):
-        return "Por implementar" """
+    def new_function(self):
+        return "El significado de la vida es: "
 
 
 
@@ -107,7 +108,7 @@ def app_callback(pad, info, user_data):
 
     # Definir el área de interés (ROI) utilizando los puntos (230,170) y (470,520)
     x_min_roi = 130  # Coordenada x mínima
-    y_min_roi = 160  # Coordenada y mínima
+    y_min_roi = 130  # Coordenada y mínima
     x_max_roi = 470  # Coordenada x máxima
     y_max_roi = 570  # Coordenada y máxima
     """x_min_roi = 0  # Coordenada x mínima
@@ -119,6 +120,7 @@ def app_callback(pad, info, user_data):
     frame = None
     if user_data.use_frame and formato is not None and ancho is not None and alto is not None:
         frame = get_numpy_from_buffer(buffer, formato, ancho, alto)
+        
 
         # Guardar el primer frame en un PNG
         if not user_data.first_frame_saved:
@@ -149,7 +151,7 @@ def app_callback(pad, info, user_data):
         y2 = int(y2_norm * alto)
 
         confianza = deteccion.get_confidence()
-        if confianza > 0.50:
+        if confianza > 0.4:
             if etiqueta in etiquetas_interes:
                 etiqueta_original = 'car'  # Guardar la etiqueta original
                 etiqueta = 'car'  # Convertir a 'car'
@@ -164,7 +166,7 @@ def app_callback(pad, info, user_data):
     if detecciones_actuales:
         # Lista para IDs de objetos actualizados en esta iteración
         ids_actualizados = set()
-
+        ids_para_eliminar = []  # Lista de IDs para eliminar
 
         # Procesar las detecciones actuales
         for etiqueta, etiqueta_original, centro_actual, bbox_coords, confianza in detecciones_actuales:
@@ -210,29 +212,19 @@ def app_callback(pad, info, user_data):
                     distancia_total = objeto_emparejado.get_distance()
                     pendiente = objeto_emparejado.get_slope()
 
-                    diferencia = objeto_emparejado.initial_center[1]-objeto_emparejado.current_center[1]
-
                     if distancia_total > 120:
-                        if diferencia > 0 and objeto_emparejado.status == 'sin_cambios':
+                        if pendiente < 0 and objeto_emparejado.status == 'sin_cambios':
                             objeto_emparejado.status = 'entrada'
-                            print(f"Objeto ID {objeto_emparejado.object_id} distancia: {distancia_total}  pendiente: {pendiente} {objeto_emparejado.initial_center[1]-objeto_emparejado.current_center[1]}  centro Inicial: {objeto_emparejado.initial_center} centro Actual: {objeto_emparejado.current_center}")
+                            print(f"Objeto ID {objeto_emparejado.object_id} distancia: {distancia_total}  pendiente: {pendiente}")
                             user_data.count_entradas += 1  # Incrementar contador de entradas
                             #ids_para_eliminar.append(objeto_emparejado.object_id)
                             print(f"Objeto ID {objeto_emparejado.object_id} cambió a 'entrada'")
-                            print("Set de IDs y datos de objetos rastreados:")
-                            for obj_id, obj in user_data.tracked_objects.items():
-                                print(f"ID: {obj_id}, Estado: {obj.status}, Centro actual: {obj.current_center}")
-                        elif diferencia < 0 and objeto_emparejado.status == 'sin_cambios':
+                        elif pendiente > 0 and objeto_emparejado.status == 'sin_cambios':
                             objeto_emparejado.status = 'salida'
-                            print(f"Objeto ID {objeto_emparejado.object_id} distancia: {distancia_total}  pendiente: {pendiente} {objeto_emparejado.initial_center[1]-objeto_emparejado.current_center[1]}  centro Inicial: {objeto_emparejado.initial_center} centro Actual: {objeto_emparejado.current_center}")
+                            print(f"Objeto ID {objeto_emparejado.object_id} distancia: {distancia_total}  pendiente: {pendiente}")
                             user_data.count_salidas += 1  # Incrementar contador de salidas
                             #ids_para_eliminar.append(objeto_emparejado.object_id)
                             print(f"Objeto ID {objeto_emparejado.object_id} cambió a 'salida'")
-                            print("Set de IDs y datos de objetos rastreados:")
-                            for obj_id, obj in user_data.tracked_objects.items():
-                                print(f"ID: {obj_id}, Estado: {obj.status}, Centro actual: {obj.current_center}")
-                        print(f"Entradas: {user_data.count_entradas}  Salidas: {user_data.count_salidas}")
-                            
 
                 # Dibujar en el frame
                 if user_data.use_frame:
@@ -284,7 +276,13 @@ def app_callback(pad, info, user_data):
             del user_data.lost_objects[obj_id]
             print(f"Objeto ID {obj_id} eliminado permanentemente de objetos perdidos.")
 
-        
+        # Eliminar objetos que cambiaron de estado
+        for obj_id in ids_para_eliminar:
+            if obj_id in user_data.tracked_objects:
+                del user_data.tracked_objects[obj_id]
+            if obj_id in user_data.lost_objects:
+                del user_data.lost_objects[obj_id]
+            print(f"Objeto ID {obj_id} removido del seguimiento.")
 
     if user_data.use_frame:
         cv2.rectangle(frame, (x_min_roi, y_min_roi), (x_max_roi, y_max_roi), (255, 255, 0), 2)  # Dibujar ROI
@@ -314,7 +312,7 @@ class GStreamerDetectionApp(GStreamerApp):
     def __init__(self, args, user_data):
         super().__init__(args, user_data)
         self.args = args  # Almacena los argumentos
-        self.batch_size = 4
+        self.batch_size = 2
         self.network_width = 640
         self.network_height = 640
         self.network_format = "RGB"
