@@ -61,7 +61,6 @@ class TrackedObject:
 class user_app_callback_class(app_callback_class):
     def __init__(self):
         super().__init__()
-        self.new_variable = 42
         self.detected_classes = set()
         self.tracked_objects = {}  # Diccionario de objetos rastreados
         self.next_object_id = 1    # Para asignar IDs únicos
@@ -76,8 +75,8 @@ class user_app_callback_class(app_callback_class):
         self.start_time = time.time()
         self.fps = 0
 
-    def new_function(self):
-        return "El significado de la vida es: "
+    """ def new_function(self):
+        return "Por implementar" """
 
 
 
@@ -150,7 +149,7 @@ def app_callback(pad, info, user_data):
         y2 = int(y2_norm * alto)
 
         confianza = deteccion.get_confidence()
-        if confianza > 0.4:
+        if confianza > 0.50:
             if etiqueta in etiquetas_interes:
                 etiqueta_original = 'car'  # Guardar la etiqueta original
                 etiqueta = 'car'  # Convertir a 'car'
@@ -232,6 +231,7 @@ def app_callback(pad, info, user_data):
                             print("Set de IDs y datos de objetos rastreados:")
                             for obj_id, obj in user_data.tracked_objects.items():
                                 print(f"ID: {obj_id}, Estado: {obj.status}, Centro actual: {obj.current_center}")
+                        print(f"Entradas: {user_data.count_entradas}  Salidas: {user_data.count_salidas}")
                             
 
                 # Dibujar en el frame
@@ -314,7 +314,7 @@ class GStreamerDetectionApp(GStreamerApp):
     def __init__(self, args, user_data):
         super().__init__(args, user_data)
         self.args = args  # Almacena los argumentos
-        self.batch_size = 2
+        self.batch_size = 4
         self.network_width = 640
         self.network_height = 640
         self.network_format = "RGB"
