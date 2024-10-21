@@ -161,3 +161,8 @@ venv_hailo_rpi5_examples/*
 resources/*.mp4
 resources/*.hef
 resources/*.so
+
+.pt
+.onnx
+.mp4
+entrenamiento
