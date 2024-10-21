@@ -2,7 +2,7 @@ import numpy as np
 import cv2
 import pandas as pd
 
-cap = cv2.VideoCapture('recording_20240928_133154.mp4')
+cap = cv2.VideoCapture('Autos.mp4')
 frames_count, fps, width, height = cap.get(cv2.CAP_PROP_FRAME_COUNT), cap.get(cv2.CAP_PROP_FPS), cap.get(
     cv2.CAP_PROP_FRAME_WIDTH), cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
 width = int(width)
@@ -23,7 +23,7 @@ fgbg = cv2.createBackgroundSubtractorMOG2()  # Creamos la sustraccion de fondo
 
 # Informacion para comenzar a guardar la informacion de video 
 ret, frame = cap.read()  # Importamos la imagen
-ratio = 1  # resize ratio
+ratio = 0.5  # resize ratio
 image = cv2.resize(frame, (0, 0), None, ratio, ratio)  # resize image
 width2, height2, channels = image.shape
 video = cv2.VideoWriter('Resultados.mp4', cv2.VideoWriter_fourcc(*'mp4v'), fps, (height2, width2), 1)
@@ -50,10 +50,10 @@ while True:
         # Dibujamos los contornos
         cv2.drawContours(image, hull, -1, (0, 255, 0), 2)
         # Linea superior para no asignar id si el objeto esta antes de esta
-        lineypos = 80
+        lineypos = 70
         cv2.line(image, (0, lineypos), (width, lineypos), (255, 0, 0), 1)
         # Linea inferior para contar
-        lineypos2 = 190
+        lineypos2 = 180
         cv2.line(image, (0, lineypos2), (width, lineypos2), (0, 255, 0), 1)
         # Area minima del contorno para el conteo
         minarea = 5000
@@ -292,7 +292,7 @@ while True:
         # Sumamos uno al contador de frames
         framenumber = framenumber + 1
 
-        k = cv2.waitKey(int(10/fps)) & 0xff  # int(1000/fps) seria la velocidad normal por lo que waitkey esta en ms
+        k = cv2.waitKey(int(200/fps)) & 0xff  # int(1000/fps) seria la velocidad normal por lo que waitkey esta en ms
         if k == 27:
             break
 
