@@ -20,6 +20,7 @@ Este repositorio contiene el desarrollo de nuestro proyecto sobre un fork del re
  2. [Avance 1 ](./Avance1%23Equipo20.pdf)
  3. [Avance 2 ](./Avance2%23Equipo20.pdf)
  4. [Avance 3 ](./Avance3%23Equipo20.pdf)
+ 5. [Avance 4 ](./Avance4%23Equipo20.pdf)
 
 ## [Código](basic_pipelines/desde_cero.py)
 
