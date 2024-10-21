@@ -21,14 +21,14 @@ Este repositorio contiene el desarrollo de nuestro proyecto sobre un fork del re
  3. [Avance 2 ](./Avance2%23Equipo20.pdf)
  4. [Avance 3 ](./Avance3%23Equipo20.pdf)
 
-## [Código](basic_pipelines/desde_cero.py)
+[Código](basic_pipelines/desde_cero.py)
 
 ## Evidencia en video
 [Avance 2 - Demostración de características ](https://moviltrack-my.sharepoint.com/:v:/p/sortega/EeXvsAuP1EdCpmZFKprT2W4BSHTL0buqXMhEXWPkI3lIXg?e=FWLSc2)
 
 [Avance 2 - Demostración de características RFID ](https://moviltrack-my.sharepoint.com/:v:/p/sortega/EfbZp_YvPrVJix2TYqhsI_ABCpYehQcC08gok_1Glbu7cg?e=sV9mKa)
 
-
+[Avance 2 - Detección con Roboflow ](https://moviltrack-my.sharepoint.com/:v:/p/sortega/EfbZp_YvPrVJix2TYqhsI_ABCpYehQcC08gok_1Glbu7cg?e=sV9mKa)
 
 [Avance 3 - Baseline](https://moviltrack-my.sharepoint.com/:v:/p/sortega/EeXvsAuP1EdCpmZFKprT2W4BSHTL0buqXMhEXWPkI3lIXg?e=FWLSc2)
 
