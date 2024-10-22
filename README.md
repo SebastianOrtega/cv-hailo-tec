@@ -33,6 +33,9 @@ Este repositorio contiene el desarrollo de nuestro proyecto sobre un fork del re
 
 [Avance 3 - Baseline](https://moviltrack-my.sharepoint.com/:v:/p/sortega/EeXvsAuP1EdCpmZFKprT2W4BSHTL0buqXMhEXWPkI3lIXg?e=FWLSc2)
 
+[Avance 4 - Modelo Entrenado](https://moviltrack-my.sharepoint.com/:v:/p/sortega/ETWWNTfixA5BpR9RQsrz_LoBNb2OV1aR8-ohNyyGC3KzBg?e=bhkdjq)
+
+
 
 
 
