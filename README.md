@@ -47,7 +47,7 @@ https://www.makesense.ai/
 Para Pruebas, hicimos edición de video para recortar los tiempos donde no hay nada y no tener que esperar tanto tiempo para probar el código. Para esto utilizamos la herramienta OpenShot, que es un editor de video de código abierto y multiplataforma.
 https://www.openshot.org/es/
 
-Para generar el dataset de entrenamiento usamos Roboflow. https://roboflow.com/
+Para generar el dataset con anotaciones de entrenamiento usamos Roboflow. Este dataset lo usamos también para probar los disferentes tipos de modelos.  https://roboflow.com/
 
 
 
