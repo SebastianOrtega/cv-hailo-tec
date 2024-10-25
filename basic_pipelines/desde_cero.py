@@ -326,7 +326,7 @@ class GStreamerDetectionApp(GStreamerApp):
         if args.hef_path is not None:
             self.hef_path = args.hef_path
         else:
-            self.hef_path = os.path.join(self.current_path, '../resources/yolov6n.hef')
+            self.hef_path = os.path.join(self.current_path, '../resources/yolov8s_entrenado.hef')
 
         self.app_callback = app_callback
 
@@ -366,7 +366,7 @@ class GStreamerDetectionApp(GStreamerApp):
 if __name__ == "__main__":
     user_data = user_app_callback_class()
     parser = get_default_parser()
-    parser.add_argument("--network", default="yolov6n", choices=['yolov6n'], help="Red a utilizar")
+    parser.add_argument("--network", default="yolov8s_entrenado", choices=['yolov6n', 'yolov8s','yolov8s_entrenado','yolox_s_leaky' ], help="Red a utilizar")
     parser.add_argument("--hef-path", default=None, help="Ruta al archivo HEF")
     parser.add_argument("--video-file", help="Ruta al archivo de video para usar como entrada")  # Nuevo argumento
     args = parser.parse_args()

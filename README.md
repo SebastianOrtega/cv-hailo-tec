@@ -56,7 +56,9 @@ Para generar el dataset con anotaciones de entrenamiento usamos Roboflow. Este d
 python basic_pipelines/desde_cero.py --video-file /media/pi/KINGSTON/recordings/Ultima_posicion/recording_20240928_133154.mp4 --use-frame
 ````
 
-La opción **--use-frame** permite visualizar el video en tiempo real, si no se coloca esta opción, Sin presentar el video con todas las características que estamos calculando, Sin embargo, si se Presenta el video con todas las detecciones y las estadísticas. 
+La opción **--network** permite seleccionar el modelo de detección a utilizar, las opciones son: yolov6n, yolov8s,yolox_s_leaky. Por defecto se utiliza yolov6s.
+
+La opción **--use-frame** permite visualizar el video en tiempo real, si no se coloca esta opción, no se presenta el video con todas las características que estamos calculando. Sin embargo, si se Presenta el video con todas las detecciones y las estadísticas. 
 
 ### Notas
 El video Que estamos utilizando los seleccionamos, porque tiene muchas características que nos permiten probar el código como vehículos estáticos distracciones, más de un vehículo en la imagen vehículos, que circulan lento y vehículos que circulan muy rápido. 
