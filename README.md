@@ -21,6 +21,7 @@ Este repositorio contiene el desarrollo de nuestro proyecto sobre un fork del re
  3. [Avance 2 ](./Avance2%23Equipo20.pdf)
  4. [Avance 3 ](./Avance3%23Equipo20.pdf)
  5. [Avance 4 ](./Avance4%23Equipo20.pdf)
+ 5. [Avance 5 ](./Avance5%23Equipo20.pdf)
 
 [Código](basic_pipelines/desde_cero.py)
 
@@ -35,7 +36,7 @@ Este repositorio contiene el desarrollo de nuestro proyecto sobre un fork del re
 
 [Avance 4 - Modelo Entrenado](https://moviltrack-my.sharepoint.com/:v:/p/sortega/ETWWNTfixA5BpR9RQsrz_LoBNb2OV1aR8-ohNyyGC3KzBg?e=bhkdjq)
 
-
+[Avance 5 - Evidencias](https://moviltrack-my.sharepoint.com/:v:/p/sortega/EazH8PN5erRFo02zmmRCtKUBhOF-oPVHJgGDyPkMaOxjXA?e=DrycCF)
 
 
 
